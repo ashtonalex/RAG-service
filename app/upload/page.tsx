@@ -1,114 +1,131 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { FileUpload } from "@/components/file-upload"
-import { useProjects } from "@/hooks/use-projects"
+import React, { useState } from "react";
 
-export default function UploadPage() {
-  const { projects, currentProject, loadProjects, setCurrentProject } = useProjects()
-  const [selectedProjectId, setSelectedProjectId] = useState<string>("")
+const CHUNK_STRATEGIES = [
+  { value: "fixed_size", label: "Fixed Size" },
+  { value: "sentence_boundary", label: "Sentence Boundary" },
+  { value: "semantic_similarity", label: "Semantic Similarity" },
+  { value: "structural", label: "Structural" },
+  { value: "topic_based", label: "Topic Based" },
+];
 
-  useEffect(() => {
-    loadProjects()
-  }, [])
+export default function ChunkDemoPage() {
+  const [text, setText] = useState("");
+  const [file, setFile] = useState<File | null>(null);
+  const [strategy, setStrategy] = useState("fixed_size");
+  const [chunks, setChunks] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (currentProject) {
-      setSelectedProjectId(currentProject.id)
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setFile(e.target.files[0]);
     }
-  }, [currentProject])
+  };
 
-  const handleProjectChange = (projectId: string) => {
-    setSelectedProjectId(projectId)
-    const project = projects.find((p) => p.id === projectId)
-    if (project) {
-      setCurrentProject(project)
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+    setChunks([]);
+    try {
+      const formData = new FormData();
+      if (file) {
+        formData.append("file", file);
+      } else if (text.trim()) {
+        formData.append("text", text);
+      } else {
+        setError("Please provide text or upload a file.");
+        setLoading(false);
+        return;
+      }
+      formData.append("strategy", strategy);
+      const res = await fetch("http://localhost:8000/api/chunk", {
+        method: "POST",
+        body: formData,
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.detail || "Chunking failed");
+      }
+      const data = await res.json();
+      setChunks(data);
+    } catch (err: any) {
+      setError(err.message || "Error occurred");
+    } finally {
+      setLoading(false);
     }
-  }
-
-  const handleUploadComplete = (files: File[]) => {
-    console.log("Upload completed:", files)
-    // Here you would typically update the project's document count
-  }
+  };
 
   return (
-    <div className="min-h-screen bg-black">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-white mb-2">Upload Documents</h1>
-          <p className="text-gray-400 text-lg">Add documents to your knowledge base for question answering</p>
+    <div className="max-w-2xl mx-auto py-8">
+      <h1 className="text-2xl font-bold mb-4">
+        Chunking Demo (Python Backend)
+      </h1>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <label className="block font-medium mb-1">Paste Text</label>
+          <textarea
+            className="w-full border rounded p-2 min-h-[100px] text-black"
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            placeholder="Paste text here or upload a file below"
+          />
         </div>
-
-        {/* Project Selection */}
-        <Card className="bg-gray-900 border-gray-700 mb-6">
-          <CardHeader>
-            <CardTitle className="text-white">Select Project</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {projects.length > 0 ? (
-              <Select value={selectedProjectId} onValueChange={handleProjectChange}>
-                <SelectTrigger className="bg-black border-gray-600 text-white">
-                  <SelectValue placeholder="Choose a project to upload to" />
-                </SelectTrigger>
-                <SelectContent className="bg-gray-900 border-gray-700">
-                  {projects.map((project) => (
-                    <SelectItem
-                      key={project.id}
-                      value={project.id}
-                      className="text-white hover:bg-gray-800 focus:bg-gray-800"
-                    >
-                      <div className="flex flex-col">
-                        <span className="font-medium">{project.name}</span>
-                        <span className="text-sm text-gray-400">{project.documentCount} documents</span>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            ) : (
-              <div className="text-center py-8">
-                <p className="text-gray-400 mb-4">No projects available</p>
-                <Button className="bg-red-600 hover:bg-red-700">Create a Project First</Button>
+        <div>
+          <label className="block font-medium mb-1">Or Upload File</label>
+          <input
+            type="file"
+            accept=".txt"
+            onChange={handleFileChange}
+            className="text-black"
+          />
+        </div>
+        <div>
+          <label className="block font-medium mb-1">Chunking Strategy</label>
+          <select
+            className="border rounded p-2 text-black"
+            value={strategy}
+            onChange={(e) => setStrategy(e.target.value)}
+          >
+            {CHUNK_STRATEGIES.map((opt) => (
+              <option key={opt.value} value={opt.value} className="text-black">
+                {opt.label}
+              </option>
+            ))}
+          </select>
+        </div>
+        <button
+          type="submit"
+          className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
+          disabled={loading}
+        >
+          {loading ? "Chunking..." : "Chunk"}
+        </button>
+      </form>
+      {error && <div className="text-red-600 mt-4">{error}</div>}
+      {chunks.length > 0 && (
+        <div className="mt-8">
+          <h2 className="text-xl font-semibold mb-2">Chunks</h2>
+          <div className="space-y-4">
+            {chunks.map((chunk, idx) => (
+              <div
+                key={idx}
+                className="border rounded p-3 bg-gray-900 text-white"
+              >
+                <div className="text-xs text-gray-400 mb-1">
+                  Chunk {idx + 1} | Tokens: {chunk.metadata.token_count} |
+                  Sentences: {chunk.metadata.sentence_count}
+                </div>
+                <pre className="whitespace-pre-wrap break-words text-sm">
+                  {chunk.text}
+                </pre>
               </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* File Upload */}
-        {selectedProjectId && <FileUpload projectId={selectedProjectId} onUploadComplete={handleUploadComplete} />}
-
-        {/* Upload Guidelines */}
-        <Card className="bg-gray-900 border-gray-700 mt-6">
-          <CardHeader>
-            <CardTitle className="text-white">Upload Guidelines</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <h4 className="text-white font-medium mb-2">Supported File Types</h4>
-              <ul className="text-gray-400 space-y-1">
-                <li>• PDF documents (.pdf)</li>
-                <li>• Word documents (.docx)</li>
-                <li>• Text files (.txt)</li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="text-white font-medium mb-2">File Size Limits</h4>
-              <p className="text-gray-400">Maximum file size: 10MB per file</p>
-            </div>
-            <div>
-              <h4 className="text-white font-medium mb-2">Processing Time</h4>
-              <p className="text-gray-400">
-                Documents are processed automatically after upload. Processing time varies based on file size and
-                content complexity.
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
-  )
+  );
 }
