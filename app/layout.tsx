@@ -6,12 +6,15 @@ import { AppProvider } from "@/lib/app-context"
 import { Header } from "@/components/header"
 import { Toaster } from "@/components/ui/toaster"
 
+
 const inter = Inter({ subsets: ["latin"] })
+
 
 export const metadata: Metadata = {
   title: "QA-RAG - Question Answering System",
   description: "A modern Q&A system powered by Retrieval-Augmented Generation",
 }
+
 
 export default function RootLayout({
   children,
@@ -32,3 +35,8 @@ export default function RootLayout({
     </html>
   )
 }
+
+
+
+
+
