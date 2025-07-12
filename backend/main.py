@@ -31,7 +31,7 @@ chunker = HybridChunker()
 # Load models and ChromaDB client
 bi_encoder = SentenceTransformer("all-MiniLM-L6-v2")
 cross_encoder = CrossEncoder("cross-encoder/ms-marco-MiniLM-L-6-v2")
-chroma_client = chromadb.Client()
+chroma_client = chromadb.PersistentClient(path="./chroma_db_test")
 
 async def save_upload_file(upload_file, destination):
     with open(destination, "wb") as buffer:
@@ -201,23 +201,29 @@ async def ask_question(payload: dict):
     context = "\n\n".join([chunk["text"] for chunk in top_chunks])
 
     # 5. Generate answer with OpenAI LLM (placeholder for API key)
-    openai.api_key = os.getenv("OPENAI_API_KEY", "sk-...your-key...")
-    prompt = (
-        f"You are a helpful assistant. Use ONLY the context below to answer the question.\n"
-        f"If the answer is not in the context, say 'I don't know.'\n"
-        f"Context:\n{context}\n\nQuestion: {question}\nAnswer:"
-    )
-    response = openai.ChatCompletion.create(
-        model="gpt-3.5-turbo",
-        messages=[{"role": "user", "content": prompt}],
-        max_tokens=512,
-        temperature=0.2,
-    )
-    answer = response["choices"][0]["message"]["content"].strip()
+    # Temporarily return context instead of generating answer for testing
+    try:
+        openai.api_key = os.getenv("OPENAI_API_KEY", "sk-...your-key...")
+        prompt = (
+            f"You are a helpful assistant. Use ONLY the context below to answer the question.\n"
+            f"If the answer is not in the context, say 'I don't know.'\n"
+            f"Context:\n{context}\n\nQuestion: {question}\nAnswer:"
+        )
+        response = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",
+            messages=[{"role": "user", "content": prompt}],
+            max_tokens=512,
+            temperature=0.2,
+        )
+        answer = response["choices"][0]["message"]["content"].strip()
+    except Exception as e:
+        answer = f"OpenAI API not available. Retrieved context: {context[:200]}..."
 
     return {
         "answer": answer,
-        "sources": top_chunks
+        "sources": top_chunks,
+        "context": context,
+        "retrieved_chunks_count": len(top_chunks)
     }
 
 @app.get("/api/projects")

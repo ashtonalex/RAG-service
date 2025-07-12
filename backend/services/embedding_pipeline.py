@@ -15,7 +15,7 @@ from backend.services.chunking_service import chunking_service
 from backend.hybrid_chunking import ChunkingStrategy
 
 class EmbeddingPipeline:
-    def __init__(self, chroma_persist_directory: str = "./chroma_db_new"):
+    def __init__(self, chroma_persist_directory: str = "./chroma_db_test"):
         """Initialize the embedding pipeline with ChromaDB client."""
         self.chroma_persist_directory = chroma_persist_directory
         self.client = chromadb.Client(
@@ -76,7 +76,7 @@ class EmbeddingPipeline:
         """
         try:
             # Convert file to PDF if needed
-            pdf_path = await convert_to_pdf(file_path)
+            pdf_path = convert_to_pdf(file_path)
             
             # Extract text from PDF
             text = self._extract_text_from_pdf(pdf_path)
