@@ -11,6 +11,7 @@ from sklearn.cluster import KMeans
 from sklearn.metrics.pairwise import cosine_similarity
 import tiktoken
 import hashlib
+import traceback
 
 # Download required NLTK data
 try:
@@ -19,7 +20,7 @@ except LookupError:
     nltk.download("punkt")
 
 # Configure logging
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 
@@ -443,8 +444,8 @@ class HybridChunker:
     def hybrid_chunk(
         self,
         text: str,
-        strategies: List[ChunkingStrategy] = None,
-        custom_params: Dict[str, Dict] = None,
+        strategies: Optional[List[ChunkingStrategy]] = None,
+        custom_params: Optional[Dict[str, Dict]] = None,
     ) -> Dict[ChunkingStrategy, List[Chunk]]:
         """
         Apply multiple chunking strategies to the same text

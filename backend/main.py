@@ -4,6 +4,7 @@ from fastapi.responses import JSONResponse
 import uvicorn
 import os
 from typing import Optional
+from enum import Enum
 
 from hybrid_chunking import HybridChunker, ChunkingStrategy
 
@@ -19,6 +20,18 @@ app.add_middleware(
 )
 
 chunker = HybridChunker()
+
+
+def serialize_metadata(metadata):
+    d = metadata.__dict__.copy()
+    if isinstance(d.get("strategy"), Enum):
+        d["strategy"] = d["strategy"].value
+    # Convert all numpy types to native Python types
+    for k, v in d.items():
+        # Convert numpy integers and floats to Python types
+        if hasattr(v, "item"):
+            d[k] = v.item()
+    return d
 
 
 @app.post("/api/chunk")
@@ -57,11 +70,15 @@ async def chunk_text_or_file(
         # Return chunk text and metadata (not embeddings)
         return JSONResponse(
             [
-                {"text": chunk.text, "metadata": chunk.metadata.__dict__}
+                {"text": chunk.text, "metadata": serialize_metadata(chunk.metadata)}
                 for chunk in chunks
             ]
         )
     except Exception as e:
+        import traceback
+
+        print("=== FULL TRACEBACK ===")
+        print(traceback.format_exc())
         raise HTTPException(status_code=500, detail=f"Chunking failed: {str(e)}")
 
 
