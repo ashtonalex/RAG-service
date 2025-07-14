@@ -41,6 +41,12 @@ bi_encoder = SentenceTransformer("all-MiniLM-L6-v2")
 cross_encoder = CrossEncoder("cross-encoder/ms-marco-MiniLM-L-6-v2")
 chroma_client = chromadb.PersistentClient(path="./chroma_db_test")
 
+# Ensure the documents collection exists
+try:
+    chroma_client.get_collection("documents")
+except:
+    chroma_client.create_collection("documents", metadata={"hnsw:space": "cosine"})
+
 
 async def save_upload_file(upload_file, destination):
     with open(destination, "wb") as buffer:
@@ -67,23 +73,27 @@ def embed_and_store_chunks(path, project_id, strategy, file_id):
 
 
 def list_projects():
-    # Stub: Replace with actual implementation
-    return []
+    """Get list of all projects."""
+    from backend.metadata_store import list_projects as metadata_list_projects
+    return metadata_list_projects()
 
 
 def list_files(project_id):
-    # Stub: Replace with actual implementation
-    return []
+    """Get list of files for a project."""
+    from backend.metadata_store import list_files as metadata_list_files
+    return metadata_list_files(project_id)
 
 
 def delete_project(project_id):
-    # Stub: Replace with actual implementation
-    pass
+    """Delete a project and all its files."""
+    from backend.metadata_store import delete_project as metadata_delete_project
+    metadata_delete_project(project_id)
 
 
 def delete_file(file_id):
-    # Stub: Replace with actual implementation
-    pass
+    """Delete a specific file."""
+    from backend.metadata_store import delete_file as metadata_delete_file
+    metadata_delete_file(file_id)
 
 
 @app.get("/api/test")
