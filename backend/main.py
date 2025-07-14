@@ -50,8 +50,20 @@ async def save_upload_file(upload_file, destination):
 
 
 def embed_and_store_chunks(path, project_id, strategy, file_id):
-    # Stub: Replace with actual implementation
-    return {"success": True, "chunks_created": 1, "total_text_length": 0}
+    """Process file through the embedding pipeline."""
+    from backend.services.embedding_pipeline import embed_and_store_chunks as pipeline_embed
+    import asyncio
+    
+    # Run the async function in sync context
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    try:
+        result = loop.run_until_complete(
+            pipeline_embed(path, project_id, strategy=strategy, file_id=file_id)
+        )
+        return result
+    finally:
+        loop.close()
 
 
 def list_projects():
