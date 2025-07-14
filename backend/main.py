@@ -1,3 +1,7 @@
+import sys
+import os
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -7,7 +11,7 @@ import os
 from typing import Optional
 from enum import Enum
 
-from hybrid_chunking import HybridChunker, ChunkingStrategy
+from backend.hybrid_chunking import HybridChunker, ChunkingStrategy
 
 # === Add missing imports ===
 from sentence_transformers import SentenceTransformer, CrossEncoder
