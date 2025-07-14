@@ -33,19 +33,18 @@ class EmbeddingPipeline:
         return f"{file_hash}_{chunk_index}"
 
     def _extract_text_from_pdf(self, pdf_path: str) -> str:
-        """Extract text from PDF file."""
+        """Extract text from PDF file using pdfplumber (consistent with main.py)."""
         try:
-            import PyPDF2
+            import pdfplumber
 
             text = ""
-            with open(pdf_path, "rb") as file:
-                pdf_reader = PyPDF2.PdfReader(file)
-                for page in pdf_reader.pages:
-                    text += page.extract_text() + "\n"
+            with pdfplumber.open(pdf_path) as pdf:
+                for page in pdf.pages:
+                    text += page.extract_text() or ""
             return text
         except ImportError:
             raise ImportError(
-                "PyPDF2 is required for PDF text extraction. Install with: pip install PyPDF2"
+                "pdfplumber is required for PDF text extraction. Install with: pip install pdfplumber"
             )
         except Exception as e:
             raise Exception(f"Error extracting text from PDF: {e}")

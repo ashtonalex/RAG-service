@@ -20,7 +20,7 @@ import pdfplumber
 import asyncio
 import openai
 
-from backend.file_conversion import convert_to_pdf, extract_text_from_pdf
+from backend.file_conversion import convert_to_pdf
 from backend.metadata_store import add_file, update_file_status
 
 app = FastAPI()
@@ -182,11 +182,8 @@ async def batch_upload(
                 file.size if hasattr(file, "size") else os.path.getsize(temp_path),
             )
             update_file_status(file_id, "processing")
-            # Convert to PDF
-            pdf_path = convert_to_pdf(temp_path)
-            # Extract text from PDF
-            text = extract_text_from_pdf(pdf_path)
             # Process file through embedding pipeline with strategy
+            # The pipeline will handle PDF conversion and text extraction internally
             result = embed_and_store_chunks(
                 temp_path, projectId, strategy=strategy_enum, file_id=file_id
             )
